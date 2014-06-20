@@ -12,14 +12,21 @@ Unit = (function(window, document) {
 			loaded:    {},
 			completed: {},
 			failed:    {},
-			load: function(argsArray) {
-				arguments = typeof argsArray == 'object' ? argsArray : arguments;
+			load: function() {
 				loaders.push(new Loader().load(arguments));
 				return Unit;
 			},
-			require: function(argsArray) {
-				arguments = typeof argsArray == 'object' ? argsArray : arguments;
+			require: function() {
 				loaders.push(new Loader().require(arguments));
+				return Unit;
+			},
+			then: function() {
+				if (!loaders.length) throw new Error(' You must call Unit.load() or Unit.require() before calling Unit.then()');
+				var argsArray = arguments;
+				loaders.push(new Loader());
+				loaders[loaders.length-2].onDone([function() {
+					this.load(argsArray);
+				}.bind(loaders[loaders.length-1])]);
 				return Unit;
 			},
 			fail: function(argsArray) {
