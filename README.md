@@ -4,7 +4,13 @@ Unit.js
 A script loader for javascript modules.
 
 <pre>
+Unit
+	.load('Widget')
+	.then('Widget.Calender')
+		.done(onLoad);
+</pre>
 
+<pre>
 Unit
 	.path('/units/')
 		.load('Class','Node.fragment')
