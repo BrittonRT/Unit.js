@@ -21,7 +21,7 @@ Unit = (function(window, document) {
 				return Unit;
 			},
 			then: function() {
-				if (!loaders.length) throw new Error(' You must call Unit.load() or Unit.require() before calling Unit.then()');
+				if (!loaders.length) throw new Error('You must call Unit.load() or Unit.require() before calling Unit.then()');
 				var argsArray = arguments;
 				loaders.push(new Loader());
 				loaders[loaders.length-2].onDone([function() {
@@ -30,11 +30,13 @@ Unit = (function(window, document) {
 				return Unit;
 			},
 			fail: function(argsArray) {
+				if (!loaders.length) throw new Error('You must call Unit.load() or Unit.require() before calling Unit.fail()');
 				arguments = typeof argsArray == 'object' ? argsArray : arguments;
 				loaders[loaders.length-1].onFail(arguments);
 				return Unit;
 			},
 			done: function(argsArray) {
+				if (!loaders.length) throw new Error('You must call Unit.load() or Unit.require() before calling Unit.done()');
 				arguments = typeof argsArray == 'object' ? argsArray : arguments;
 				loaders[loaders.length-1].onDone(arguments);
 				return Unit;
