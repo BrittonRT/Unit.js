@@ -24,12 +24,12 @@ Unit = (function(window, document) {
 			},
 			fail: function(argsArray) {
 				arguments = typeof argsArray == 'object' ? argsArray : arguments;
-				loaders[loaders.length-1].fail(arguments);
+				loaders[loaders.length-1].onFail(arguments);
 				return Unit;
 			},
 			done: function(argsArray) {
 				arguments = typeof argsArray == 'object' ? argsArray : arguments;
-				loaders[loaders.length-1].done(arguments);
+				loaders[loaders.length-1].onDone(arguments);
 				return Unit;
 			},
 			finish: function() {
@@ -59,13 +59,11 @@ Unit = (function(window, document) {
 	Loader.prototype = {
 		load: function(arguments) {
 			console.log('loading', arguments);
-			var _this = this;
-			for (var i in arguments) { argument = arguments[i];
+			for (var i in arguments) { var argument = arguments[i];
 				if (typeof argument != 'string') throw new Error('Arguments of Unit.load() must be string path names.');
 				this.total++;
 				argument += '.unit';
 				if (Unit.completed[argument]) {
-					console.log('- completed', argument);
 					this.scripts[argument] = Unit.scripts[argument];
 					if (this.scripts[argument].failed)
 						this.errors.push(this.scripts[argument].src);
@@ -73,19 +71,17 @@ Unit = (function(window, document) {
 						this.successes.push(this.scripts[argument].src);
 					this.completed++;
 				} else {
-					console.log('- uncompleted', argument);
-					this.scripts[argument] = Unit.scripts[argument] = new Script(argument);
-					this.scripts[argument]
+					this.scripts[argument] = (Unit.scripts[argument] = Unit.scripts[argument] || new Script(argument))
 						.onDone(function(script) {
-							_this.successes.push(script);
-							_this.completed++;
-							_this.checkComplete();
-						})
-						.onError(function(error) {
-							_this.errors.push(error);
-							_this.completed++;
-							_this.checkComplete();
-						});
+							this.successes.push(script);
+							this.completed++;
+							this.checkComplete();
+						}.bind(this))
+						.onFail(function(error) {
+							this.errors.push(error);
+							this.completed++;
+							this.checkComplete();
+						}.bind(this));
 				}
 				
 			}
@@ -95,22 +91,21 @@ Unit = (function(window, document) {
 			this.required = true;
 			this.load(arguments);
 		},
-		fail: function(arguments) {
-			for (var i in arguments) { argument = arguments[i];
+		onFail: function(arguments) {
+			for (var i in arguments) { var argument = arguments[i];
 				if (typeof argument != 'function') throw new Error('Arguments of Unit.fail() must be functions.');
 				this.on.fail.push(argument);
 			}
 			return this.checkComplete();
 		},
-		done: function(arguments) {
-			for (var i in arguments) { argument = arguments[i];
+		onDone: function(arguments) {
+			for (var i in arguments) { var argument = arguments[i];
 				if (typeof argument != 'function') throw new Error('Arguments of Unit.done() must be functions.');
 				this.on.done.push(argument);
 			}
 			return this.checkComplete();
 		},
 		checkComplete: function() {
-					console.log (this.id, this.doneComplete,this.completed, this.total, this.on, this.successes, this.errors);
 			if (this.completed == this.total) {
 				if (this.required && this.errors.length)
 					throw new Error('Unable to load the following required scripts: '+this.errors.join(', '));
@@ -139,9 +134,9 @@ Unit = (function(window, document) {
 		this.error     = false;
 		this.src       = src;
 		this.on = {
-			load:  [],
-			done:  [],
-			error: []
+			load: [],
+			done: [],
+			fail: []
 		}
 		var _elem = this.elem = document.createElement('script');
 			_elem.setAttribute('async', '');
@@ -161,8 +156,8 @@ Unit = (function(window, document) {
 			this.on.done.push(callback);
 			return this;
 		},
-		onError: function(callback) {
-			this.on.error.push(callback);
+		onFail: function(callback) {
+			this.on.fail.push(callback);
 			return this;
 		},
 		load: function() {
